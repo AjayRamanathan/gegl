@@ -254,17 +254,18 @@ enum
 };
 
 
-static void gegl_sampler_lohalo_get (      GeglSampler* restrict self,
-                                     const gdouble               absolute_x,
-                                     const gdouble               absolute_y,
-                                           GeglMatrix2          *scale,
-                                           void*        restrict output);
+static void gegl_sampler_lohalo_get (GeglSampler* restrict  self,
+                                     const gdouble          absolute_x,
+                                     const gdouble          absolute_y,
+                                     GeglMatrix2           *scale,
+                                     void*        restrict  output,
+                                     GeglAbyssPolicy        repeat_mode);
 
 
-static void set_property (      GObject*    gobject,
-                                guint       property_id,
-                          const GValue*     value,
-                                GParamSpec* pspec);
+static void set_property (GObject*      gobject,
+                          guint         property_id,
+                          const GValue* value,
+                          GParamSpec*   pspec);
 
 
 static void get_property (GObject*    gobject,
@@ -1304,11 +1305,12 @@ level_1_ewa_update (const gint              j,
 
 
 static void
-gegl_sampler_lohalo_get (      GeglSampler* restrict self,
-                         const gdouble               absolute_x,
-                         const gdouble               absolute_y,
-                         GeglMatrix2                *scale,
-                               void*        restrict output)
+gegl_sampler_lohalo_get (GeglSampler* restrict  self,
+                         const gdouble          absolute_x,
+                         const gdouble          absolute_y,
+                         GeglMatrix2           *scale,
+                         void*        restrict  output,
+                         GeglAbyssPolicy        repeat_mode)
 {
   /*
    * Needed constants related to the input pixel value pointer
@@ -2432,10 +2434,10 @@ gegl_sampler_lohalo_get (      GeglSampler* restrict self,
 
 
 static void
-set_property (      GObject*    gobject,
-                    guint       property_id,
-              const GValue*     value,
-                    GParamSpec* pspec)
+set_property (GObject*      gobject,
+              guint         property_id,
+              const GValue* value,
+              GParamSpec*   pspec)
 {
   /* G_OBJECT_WARN_INVALID_PROPERTY_ID (gobject, property_id, pspec); */
 }

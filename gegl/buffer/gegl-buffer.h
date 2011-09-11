@@ -389,7 +389,6 @@ void              gegl_buffer_sample          (GeglBuffer       *buffer,
 
 
 
-
 /**
  * gegl_buffer_sample_cleanup:
  * @buffer: the GeglBuffer to sample from

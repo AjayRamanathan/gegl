@@ -32,19 +32,20 @@ enum
   PROP_LAST
 };
 
-static void    gegl_sampler_nearest_get (GeglSampler  *self,
-                                         gdouble       x,
-                                         gdouble       y,
-                                         GeglMatrix2  *scale,
-                                         void         *output);
-static void    set_property             (GObject      *gobject,
-                                         guint         prop_id,
-                                         const GValue *value,
-                                         GParamSpec   *pspec);
-static void    get_property             (GObject      *gobject,
-                                         guint         prop_id,
-                                         GValue       *value,
-                                         GParamSpec   *pspec);
+static void    gegl_sampler_nearest_get (GeglSampler    *self,
+                                         gdouble         x,
+                                         gdouble         y,
+                                         GeglMatrix2    *scale,
+                                         void           *output,
+                                         GeglAbyssPolicy repeat_mode);
+static void    set_property             (GObject        *gobject,
+                                         guint           prop_id,
+                                         const GValue   *value,
+                                         GParamSpec     *pspec);
+static void    get_property             (GObject        *gobject,
+                                         guint           prop_id,
+                                         GValue         *value,
+                                         GParamSpec     *pspec);
 
 G_DEFINE_TYPE (GeglSamplerNearest, gegl_sampler_nearest, GEGL_TYPE_SAMPLER)
 
@@ -72,11 +73,12 @@ gegl_sampler_nearest_init (GeglSamplerNearest *self)
 }
 
 void
-gegl_sampler_nearest_get (GeglSampler *self,
-                          gdouble      x,
-                          gdouble      y,
-                          GeglMatrix2 *scale,
-                          void        *output)
+gegl_sampler_nearest_get (GeglSampler    *self,
+                          gdouble         x,
+                          gdouble         y,
+                          GeglMatrix2    *scale,
+                          void           *output,
+                          GeglAbyssPolicy repeat_mode)
 {
   gfloat             *sampler_bptr;
   sampler_bptr = gegl_sampler_get_from_buffer (self, (gint)x, (gint)y);
