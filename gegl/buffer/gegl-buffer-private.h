@@ -46,8 +46,8 @@ struct _GeglBuffer
                                 be different from format */
 
   gint              shift_x; /* The relative offset of origins compared with */
-  gint              shift_y; /* anchestral tile_storage buffer, during            */
-                             /* construction relative to immediate source  */
+  gint              shift_y; /* anchestral tile_storage buffer, during       */
+                             /* construction relative to immediate source    */
 
   GeglRectangle     abyss;
 
@@ -111,7 +111,8 @@ void              gegl_buffer_get_unlocked (GeglBuffer          *buffer,
                                             const GeglRectangle *rect,
                                             const Babl          *format,
                                             gpointer             dest_buf,
-                                            gint                 rowstride);
+                                            gint                 rowstride,
+                                            GeglAbyssPolicy      repeat_mode);
 
 GeglBuffer *
 gegl_buffer_new_ram (const GeglRectangle *extent,
