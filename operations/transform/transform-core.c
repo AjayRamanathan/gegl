@@ -24,7 +24,6 @@
  */
 
 /* TODO: only calculate pixels inside transformed polygon */
-/* TODO: should hard edges always be used when only scaling? */
 /* TODO: make rect calculations depend on the sampling kernel of the
  *       interpolation filter used */
 
@@ -49,8 +48,6 @@ enum
   PROP_ORIGIN_X = 1,
   PROP_ORIGIN_Y,
   PROP_FILTER,
-  PROP_HARD_EDGES,
-  PROP_LANCZOS_WIDTH
 };
 
 static void          gegl_affine_finalize                  (GObject              *object);
@@ -219,20 +216,6 @@ op_affine_class_init (OpTransformClass *klass)
                                      _("Filter type (nearest, linear, lanczos, cubic, lohalo)"),
                                      "linear",
                                      G_PARAM_CONSTRUCT | G_PARAM_READWRITE));
-  g_object_class_install_property (gobject_class, PROP_HARD_EDGES,
-                                   g_param_spec_boolean (
-                                     "hard-edges",
-                                     _("Hard edges"),
-                                     _("Hard edges"),
-                                     FALSE,
-                                     G_PARAM_CONSTRUCT | G_PARAM_READWRITE));
-  g_object_class_install_property (gobject_class, PROP_LANCZOS_WIDTH,
-                                   g_param_spec_int (
-                                     "lanczos-width",
-                                     _("Lanczos width"),
-                                     _("Width of the Lanczos function"),
-                                     3, 6, 3,
-                                     G_PARAM_CONSTRUCT | G_PARAM_READWRITE));
 }
 
 static void
@@ -266,12 +249,6 @@ gegl_affine_get_property (GObject    *object,
     case PROP_FILTER:
       g_value_set_string (value, self->filter);
       break;
-    case PROP_HARD_EDGES:
-      g_value_set_boolean (value, self->hard_edges);
-      break;
-    case PROP_LANCZOS_WIDTH:
-      g_value_set_int (value, self->lanczos_width);
-      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -297,12 +274,6 @@ gegl_affine_set_property (GObject      *object,
     case PROP_FILTER:
       g_free (self->filter);
       self->filter = g_value_dup_string (value);
-      break;
-    case PROP_HARD_EDGES:
-      self->hard_edges = g_value_get_boolean (value);
-      break;
-    case PROP_LANCZOS_WIDTH:
-      self->lanczos_width = g_value_get_int (value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
