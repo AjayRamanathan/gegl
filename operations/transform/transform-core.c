@@ -47,10 +47,9 @@ enum
 {
   PROP_ORIGIN_X = 1,
   PROP_ORIGIN_Y,
-  PROP_FILTER,
+  PROP_SAMPLER,
 };
 
-static void          gegl_affine_finalize                  (GObject              *object);
 static void          gegl_affine_get_property              (GObject              *object,
                                                             guint                 prop_id,
                                                             GValue               *value,
@@ -141,28 +140,6 @@ op_affine_get_type (void)
   return g_define_type_id;
 }
 
-#if 0
-static void
-op_affine_sampler_init (OpTransform *self)
-{
-  GType                 desired_type;
-  GeglInterpolation     interpolation;
-
-  interpolation = gegl_buffer_interpolation_from_string (self->filter);
-  desired_type = gegl_sampler_type_from_interpolation (interpolation);
-
-  if (self->sampler != NULL &&
-      !G_TYPE_CHECK_INSTANCE_TYPE (self->sampler, desired_type))
-    {
-      self->sampler->buffer=NULL;
-      g_object_unref(self->sampler);
-      self->sampler = NULL;
-    }
-
-  self->sampler = op_affine_sampler (self);
-}
-#endif
-
 static void
 gegl_affine_prepare (GeglOperation *operation)
 {
@@ -179,7 +156,6 @@ op_affine_class_init (OpTransformClass *klass)
 
   gobject_class->set_property         = gegl_affine_set_property;
   gobject_class->get_property         = gegl_affine_get_property;
-  gobject_class->finalize             = gegl_affine_finalize;
 
   op_class->get_invalidated_by_change = gegl_affine_get_invalidated_by_change;
   op_class->get_bounding_box          = gegl_affine_get_bounding_box;
@@ -209,20 +185,14 @@ op_affine_class_init (OpTransformClass *klass)
                                      -G_MAXDOUBLE, G_MAXDOUBLE,
                                      0.,
                                      G_PARAM_CONSTRUCT | G_PARAM_READWRITE));
-  g_object_class_install_property (gobject_class, PROP_FILTER,
-                                   g_param_spec_string (
-                                     "filter",
-                                     _("Filter"),
-                                     _("Filter type (nearest, linear, lanczos, cubic, lohalo)"),
-                                     "linear",
+  g_object_class_install_property (gobject_class, PROP_SAMPLER,
+                                   g_param_spec_enum (
+                                     "sampler",
+                                     _("Sampler"),
+                                     _("Sampler used internally"),
+                                     gegl_sampler_type_get_type (),
+                                     GEGL_SAMPLER_LINEAR,
                                      G_PARAM_CONSTRUCT | G_PARAM_READWRITE));
-}
-
-static void
-gegl_affine_finalize (GObject *object)
-{
-  g_free (OP_AFFINE (object)->filter);
-  G_OBJECT_CLASS (op_affine_parent_class)->finalize (object);
 }
 
 static void
@@ -246,8 +216,8 @@ gegl_affine_get_property (GObject    *object,
     case PROP_ORIGIN_Y:
       g_value_set_double (value, self->origin_y);
       break;
-    case PROP_FILTER:
-      g_value_set_string (value, self->filter);
+    case PROP_SAMPLER:
+      g_value_set_enum (value, self->sampler);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -271,9 +241,8 @@ gegl_affine_set_property (GObject      *object,
     case PROP_ORIGIN_Y:
       self->origin_y = g_value_get_double (value);
       break;
-    case PROP_FILTER:
-      g_free (self->filter);
-      self->filter = g_value_dup_string (value);
+    case PROP_SAMPLER:
+      self->sampler = g_value_get_enum (value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -365,8 +334,7 @@ gegl_affine_is_intermediate_node (OpTransform *affine)
 
       sink = gegl_connection_get_sink_node (connections->data)->operation;
 
-      if (! IS_OP_AFFINE (sink) ||
-          strcmp (affine->filter, OP_AFFINE (sink)->filter))
+      if (! IS_OP_AFFINE (sink) || affine->sampler != OP_AFFINE (sink)->sampler)
         return FALSE;
     }
   while ((connections = g_slist_next (connections)));
@@ -388,8 +356,7 @@ gegl_affine_is_composite_node (OpTransform *affine)
 
   source = gegl_connection_get_source_node (connections->data)->operation;
 
-  return (IS_OP_AFFINE (source) &&
-          ! strcmp (affine->filter, OP_AFFINE (source)->filter));
+  return (IS_OP_AFFINE (source) && affine->sampler == OP_AFFINE (source)->sampler);
 }
 
 static void
@@ -424,8 +391,9 @@ gegl_affine_get_bounding_box (GeglOperation *op)
   GeglRectangle  context_rect;
   GeglSampler   *sampler;
 
-  sampler = gegl_buffer_sampler_new (NULL, babl_format("RaGaBaA float"),
-      gegl_sampler_type_from_string (affine->filter));
+  sampler = gegl_buffer_sampler_new (NULL,
+                                     babl_format("RaGaBaA float"),
+                                     affine->sampler);
   context_rect = *gegl_sampler_get_context_rect (sampler);
   g_object_unref (sampler);
 
@@ -504,7 +472,7 @@ gegl_affine_get_required_for_output (GeglOperation       *op,
                                      const gchar         *input_pad,
                                      const GeglRectangle *region)
 {
-  OpTransform      *affine = OP_AFFINE (op);
+  OpTransform   *affine = OP_AFFINE (op);
   GeglMatrix3    inverse;
   GeglRectangle  requested_rect,
                  need_rect;
@@ -514,8 +482,9 @@ gegl_affine_get_required_for_output (GeglOperation       *op,
   gint           i;
 
   requested_rect = *region;
-  sampler = gegl_buffer_sampler_new (NULL, babl_format("RaGaBaA float"),
-      gegl_sampler_type_from_string (affine->filter));
+  sampler = gegl_buffer_sampler_new (NULL,
+                                     babl_format("RaGaBaA float"),
+                                     affine->sampler);
   context_rect = *gegl_sampler_get_context_rect (sampler);
   g_object_unref (sampler);
 
@@ -557,7 +526,7 @@ gegl_affine_get_invalidated_by_change (GeglOperation       *op,
                                        const gchar         *input_pad,
                                        const GeglRectangle *input_region)
 {
-  OpTransform          *affine = OP_AFFINE (op);
+  OpTransform       *affine = OP_AFFINE (op);
   GeglMatrix3        matrix;
   GeglRectangle      affected_rect;
   GeglRectangle      context_rect;
@@ -566,8 +535,9 @@ gegl_affine_get_invalidated_by_change (GeglOperation       *op,
   gint               i;
   GeglRectangle      region = *input_region;
 
-  sampler = gegl_buffer_sampler_new (NULL, babl_format("RaGaBaA float"),
-      gegl_sampler_type_from_string (affine->filter));
+  sampler = gegl_buffer_sampler_new (NULL,
+                                     babl_format("RaGaBaA float"),
+                                     affine->sampler);
   context_rect = *gegl_sampler_get_context_rect (sampler);
   g_object_unref (sampler);
 
@@ -941,7 +911,7 @@ gegl_affine_process (GeglOperation        *operation,
     }
   else if (gegl_affine_matrix3_allow_fast_translate (&matrix) ||
            (gegl_matrix3_is_translate (&matrix) &&
-            ! strcmp (affine->filter, "nearest")))
+            affine->sampler == GEGL_SAMPLER_NEAREST))
     {
       /* doing a buffer shifting trick, (enhanced nop) */
       input  = gegl_operation_context_get_source (context, "input");
@@ -981,8 +951,9 @@ gegl_affine_process (GeglOperation        *operation,
       src_rect = gegl_operation_get_required_for_output (operation, "output", result);
       src_rect.y += 1;
 
-      sampler = gegl_buffer_sampler_new (input, babl_format("RaGaBaA float"),
-          gegl_sampler_type_from_string (affine->filter));
+      sampler = gegl_buffer_sampler_new (input,
+                                         babl_format("RaGaBaA float"),
+                                         affine->sampler);
       context_rect = *gegl_sampler_get_context_rect (sampler);
 
       src_rect.width -= context_rect.width;
@@ -1012,8 +983,9 @@ gegl_affine_process (GeglOperation        *operation,
       src_rect = gegl_operation_get_required_for_output (operation, "output", result);
       src_rect.x += 1;
 
-      sampler = gegl_buffer_sampler_new (input, babl_format("RaGaBaA float"),
-          gegl_sampler_type_from_string (affine->filter));
+      sampler = gegl_buffer_sampler_new (input,
+                                         babl_format("RaGaBaA float"),
+                                         affine->sampler);
       context_rect = *gegl_sampler_get_context_rect (sampler);
 
       src_rect.width -= context_rect.width;
@@ -1033,8 +1005,9 @@ gegl_affine_process (GeglOperation        *operation,
       input  = gegl_operation_context_get_source (context, "input");
       output = gegl_operation_context_get_target (context, "output");
 
-      sampler = gegl_buffer_sampler_new (input, babl_format("RaGaBaA float"),
-          gegl_sampler_type_from_string (affine->filter));
+      sampler = gegl_buffer_sampler_new (input,
+                                         babl_format("RaGaBaA float"),
+                                         affine->sampler);
 
       if (gegl_matrix3_is_affine (&matrix))
         {
