@@ -50,69 +50,69 @@ enum
   PROP_SAMPLER,
 };
 
-static void          gegl_affine_get_property              (GObject              *object,
-                                                            guint                 prop_id,
-                                                            GValue               *value,
-                                                            GParamSpec           *pspec);
-static void          gegl_affine_set_property              (GObject              *object,
-                                                            guint                 prop_id,
-                                                            const GValue         *value,
-                                                            GParamSpec           *pspec);
-static void          gegl_affine_bounding_box              (gdouble              *points,
-                                                            gint                  num_points,
-                                                            GeglRectangle        *output);
-static gboolean      gegl_affine_is_intermediate_node      (OpTransform             *affine);
-static gboolean      gegl_affine_is_composite_node         (OpTransform             *affine);
-static void          gegl_affine_get_source_matrix         (OpTransform             *affine,
-                                                            GeglMatrix3          *output);
-static GeglRectangle gegl_affine_get_bounding_box          (GeglOperation        *op);
-static GeglRectangle gegl_affine_get_invalidated_by_change (GeglOperation        *operation,
-                                                            const gchar          *input_pad,
-                                                            const GeglRectangle  *input_region);
-static GeglRectangle gegl_affine_get_required_for_output   (GeglOperation        *self,
-                                                            const gchar          *input_pad,
-                                                            const GeglRectangle  *region);
-static gboolean      gegl_affine_process                   (GeglOperation        *operation,
-                                                            GeglOperationContext *context,
-                                                            const gchar          *output_prop,
-                                                            const GeglRectangle  *result,
-                                                            gint                  level);
-static GeglNode    * gegl_affine_detect                    (GeglOperation        *operation,
-                                                            gint                  x,
-                                                            gint                  y);
+static void          gegl_transform_get_property              (GObject              *object,
+                                                               guint                 prop_id,
+                                                               GValue               *value,
+                                                               GParamSpec           *pspec);
+static void          gegl_transform_set_property              (GObject              *object,
+                                                               guint                 prop_id,
+                                                               const GValue         *value,
+                                                               GParamSpec           *pspec);
+static void          gegl_transform_bounding_box              (gdouble              *points,
+                                                               gint                  num_points,
+                                                               GeglRectangle        *output);
+static gboolean      gegl_transform_is_intermediate_node      (OpTransform          *transform);
+static gboolean      gegl_transform_is_composite_node         (OpTransform          *transform);
+static void          gegl_transform_get_source_matrix         (OpTransform          *transform,
+                                                               GeglMatrix3          *output);
+static GeglRectangle gegl_transform_get_bounding_box          (GeglOperation        *op);
+static GeglRectangle gegl_transform_get_invalidated_by_change (GeglOperation        *operation,
+                                                               const gchar          *input_pad,
+                                                               const GeglRectangle  *input_region);
+static GeglRectangle gegl_transform_get_required_for_output   (GeglOperation        *self,
+                                                               const gchar          *input_pad,
+                                                               const GeglRectangle  *region);
+static gboolean      gegl_transform_process                   (GeglOperation        *operation,
+                                                               GeglOperationContext *context,
+                                                               const gchar          *output_prop,
+                                                               const GeglRectangle  *result,
+                                                               gint                  level);
+static GeglNode    * gegl_transform_detect                    (GeglOperation        *operation,
+                                                               gint                  x,
+                                                               gint                  y);
 
 static gboolean      gegl_matrix3_is_affine                        (GeglMatrix3 *matrix);
-static gboolean      gegl_affine_matrix3_allow_fast_translate      (GeglMatrix3 *matrix);
-static gboolean      gegl_affine_matrix3_allow_fast_reflect_x      (GeglMatrix3 *matrix);
-static gboolean      gegl_affine_matrix3_allow_fast_reflect_y      (GeglMatrix3 *matrix);
+static gboolean      gegl_transform_matrix3_allow_fast_translate      (GeglMatrix3 *matrix);
+static gboolean      gegl_transform_matrix3_allow_fast_reflect_x      (GeglMatrix3 *matrix);
+static gboolean      gegl_transform_matrix3_allow_fast_reflect_y      (GeglMatrix3 *matrix);
 
-static void          gegl_affine_fast_reflect_x            (GeglBuffer           *dest,
-                                                            GeglBuffer           *src,
-                                                            const GeglRectangle  *dest_rect,
-                                                            const GeglRectangle  *src_rect,
-                                                            gint                  level);
-static void          gegl_affine_fast_reflect_y            (GeglBuffer           *dest,
-                                                            GeglBuffer           *src,
-                                                            const GeglRectangle  *dest_rect,
-                                                            const GeglRectangle  *src_rect,
-                                                            gint                  level);
+static void          gegl_transform_fast_reflect_x            (GeglBuffer           *dest,
+                                                               GeglBuffer           *src,
+                                                               const GeglRectangle  *dest_rect,
+                                                               const GeglRectangle  *src_rect,
+                                                               gint                  level);
+static void          gegl_transform_fast_reflect_y            (GeglBuffer           *dest,
+                                                               GeglBuffer           *src,
+                                                               const GeglRectangle  *dest_rect,
+                                                               const GeglRectangle  *src_rect,
+                                                               gint                  level);
 
 
 /* ************************* */
 
-static void     op_affine_init          (OpTransform      *self);
-static void     op_affine_class_init    (OpTransformClass *klass);
-static gpointer op_affine_parent_class = NULL;
+static void     op_transform_init          (OpTransform      *self);
+static void     op_transform_class_init    (OpTransformClass *klass);
+static gpointer op_transform_parent_class = NULL;
 
 static void
-op_affine_class_intern_init (gpointer klass)
+op_transform_class_intern_init (gpointer klass)
 {
-  op_affine_parent_class = g_type_class_peek_parent (klass);
-  op_affine_class_init ((OpTransformClass *) klass);
+  op_transform_parent_class = g_type_class_peek_parent (klass);
+  op_transform_class_init ((OpTransformClass *) klass);
 }
 
 GType
-op_affine_get_type (void)
+op_transform_get_type (void)
 {
   static GType g_define_type_id = 0;
   if (G_UNLIKELY (g_define_type_id == 0))
@@ -122,26 +122,26 @@ op_affine_get_type (void)
           sizeof (OpTransformClass),
           (GBaseInitFunc) NULL,
           (GBaseFinalizeFunc) NULL,
-          (GClassInitFunc) op_affine_class_intern_init,
+          (GClassInitFunc) op_transform_class_intern_init,
           (GClassFinalizeFunc) NULL,
           NULL,   /* class_data */
           sizeof (OpTransform),
           0,      /* n_preallocs */
-          (GInstanceInitFunc) op_affine_init,
+          (GInstanceInitFunc) op_transform_init,
           NULL    /* value_table */
         };
 
       g_define_type_id =
-        gegl_module_register_type (affine_module_get_module (),
+        gegl_module_register_type (transform_module_get_module (),
                                    GEGL_TYPE_OPERATION_FILTER,
-                                   "GeglOpPlugIn-affine",
+                                   "GeglOpPlugIn-transform-core",
                                    &g_define_type_info, 0);
     }
   return g_define_type_id;
 }
 
 static void
-gegl_affine_prepare (GeglOperation *operation)
+gegl_transform_prepare (GeglOperation *operation)
 {
   const Babl *format = babl_format ("RaGaBaA float");
   gegl_operation_set_format (operation, "input", format);
@@ -149,20 +149,20 @@ gegl_affine_prepare (GeglOperation *operation)
 }
 
 static void
-op_affine_class_init (OpTransformClass *klass)
+op_transform_class_init (OpTransformClass *klass)
 {
   GObjectClass         *gobject_class = G_OBJECT_CLASS (klass);
   GeglOperationClass   *op_class      = GEGL_OPERATION_CLASS (klass);
 
-  gobject_class->set_property         = gegl_affine_set_property;
-  gobject_class->get_property         = gegl_affine_get_property;
+  gobject_class->set_property         = gegl_transform_set_property;
+  gobject_class->get_property         = gegl_transform_get_property;
 
-  op_class->get_invalidated_by_change = gegl_affine_get_invalidated_by_change;
-  op_class->get_bounding_box          = gegl_affine_get_bounding_box;
-  op_class->get_required_for_output   = gegl_affine_get_required_for_output;
-  op_class->detect                    = gegl_affine_detect;
-  op_class->process                   = gegl_affine_process;
-  op_class->prepare                   = gegl_affine_prepare;
+  op_class->get_invalidated_by_change = gegl_transform_get_invalidated_by_change;
+  op_class->get_bounding_box          = gegl_transform_get_bounding_box;
+  op_class->get_required_for_output   = gegl_transform_get_required_for_output;
+  op_class->detect                    = gegl_transform_detect;
+  op_class->process                   = gegl_transform_process;
+  op_class->prepare                   = gegl_transform_prepare;
   op_class->no_cache                  = TRUE;
 
   klass->create_matrix = NULL;
@@ -196,17 +196,17 @@ op_affine_class_init (OpTransformClass *klass)
 }
 
 static void
-op_affine_init (OpTransform *self)
+op_transform_init (OpTransform *self)
 {
 }
 
 static void
-gegl_affine_get_property (GObject    *object,
-                          guint       prop_id,
-                          GValue     *value,
-                          GParamSpec *pspec)
+gegl_transform_get_property (GObject    *object,
+                             guint       prop_id,
+                             GValue     *value,
+                             GParamSpec *pspec)
 {
-  OpTransform *self = OP_AFFINE (object);
+  OpTransform *self = OP_TRANSFORM (object);
 
   switch (prop_id)
     {
@@ -226,12 +226,12 @@ gegl_affine_get_property (GObject    *object,
 }
 
 static void
-gegl_affine_set_property (GObject      *object,
-                          guint         prop_id,
-                          const GValue *value,
-                          GParamSpec   *pspec)
+gegl_transform_set_property (GObject      *object,
+                             guint         prop_id,
+                             const GValue *value,
+                             GParamSpec   *pspec)
 {
-  OpTransform *self = OP_AFFINE (object);
+  OpTransform *self = OP_TRANSFORM (object);
 
   switch (prop_id)
     {
@@ -251,37 +251,37 @@ gegl_affine_set_property (GObject      *object,
 }
 
 static void
-gegl_affine_create_matrix (OpTransform    *affine,
-                           GeglMatrix3 *matrix)
+gegl_transform_create_matrix (OpTransform  *transform,
+                              GeglMatrix3  *matrix)
 {
   gegl_matrix3_identity (matrix);
 
-  if (OP_AFFINE_GET_CLASS (affine))
-    OP_AFFINE_GET_CLASS (affine)->create_matrix (affine, matrix);
+  if (OP_TRANSFORM_GET_CLASS (transform))
+    OP_TRANSFORM_GET_CLASS (transform)->create_matrix (transform, matrix);
 }
 
 static void
-gegl_affine_create_composite_matrix (OpTransform    *affine,
-                                     GeglMatrix3 *matrix)
+gegl_transform_create_composite_matrix (OpTransform    *transform,
+                                        GeglMatrix3 *matrix)
 {
-  gegl_affine_create_matrix (affine, matrix);
+  gegl_transform_create_matrix (transform, matrix);
 
-  if (affine->origin_x || affine->origin_y)
-    gegl_matrix3_originate (matrix, affine->origin_x, affine->origin_y);
+  if (transform->origin_x || transform->origin_y)
+    gegl_matrix3_originate (matrix, transform->origin_x, transform->origin_y);
 
-  if (gegl_affine_is_composite_node (affine))
+  if (gegl_transform_is_composite_node (transform))
     {
       GeglMatrix3 source;
 
-      gegl_affine_get_source_matrix (affine, &source);
+      gegl_transform_get_source_matrix (transform, &source);
       gegl_matrix3_multiply (matrix, &source, matrix);
     }
 }
 
 static void
-gegl_affine_bounding_box (gdouble       *points,
-                          gint           num_points,
-                          GeglRectangle *output)
+gegl_transform_bounding_box (gdouble       *points,
+                             gint           num_points,
+                             GeglRectangle *output)
 {
   gint    i;
   gdouble min_x,
@@ -318,10 +318,10 @@ gegl_affine_bounding_box (gdouble       *points,
 }
 
 static gboolean
-gegl_affine_is_intermediate_node (OpTransform *affine)
+gegl_transform_is_intermediate_node (OpTransform *transform)
 {
   GSList        *connections;
-  GeglOperation *op = GEGL_OPERATION (affine);
+  GeglOperation *op = GEGL_OPERATION (transform);
 
   connections = gegl_pad_get_connections (gegl_node_get_pad (op->node,
                                                              "output"));
@@ -334,7 +334,7 @@ gegl_affine_is_intermediate_node (OpTransform *affine)
 
       sink = gegl_connection_get_sink_node (connections->data)->operation;
 
-      if (! IS_OP_AFFINE (sink) || affine->sampler != OP_AFFINE (sink)->sampler)
+      if (! IS_OP_TRANSFORM (sink) || transform->sampler != OP_TRANSFORM (sink)->sampler)
         return FALSE;
     }
   while ((connections = g_slist_next (connections)));
@@ -343,10 +343,10 @@ gegl_affine_is_intermediate_node (OpTransform *affine)
 }
 
 static gboolean
-gegl_affine_is_composite_node (OpTransform *affine)
+gegl_transform_is_composite_node (OpTransform *transform)
 {
   GSList        *connections;
-  GeglOperation *op = GEGL_OPERATION (affine);
+  GeglOperation *op = GEGL_OPERATION (transform);
   GeglOperation *source;
 
   connections = gegl_pad_get_connections (gegl_node_get_pad (op->node,
@@ -356,15 +356,15 @@ gegl_affine_is_composite_node (OpTransform *affine)
 
   source = gegl_connection_get_source_node (connections->data)->operation;
 
-  return (IS_OP_AFFINE (source) && affine->sampler == OP_AFFINE (source)->sampler);
+  return (IS_OP_TRANSFORM (source) && transform->sampler == OP_TRANSFORM (source)->sampler);
 }
 
 static void
-gegl_affine_get_source_matrix (OpTransform    *affine,
-                               GeglMatrix3 *output)
+gegl_transform_get_source_matrix (OpTransform    *transform,
+                                  GeglMatrix3 *output)
 {
   GSList        *connections;
-  GeglOperation *op = GEGL_OPERATION (affine);
+  GeglOperation *op = GEGL_OPERATION (transform);
   GeglOperation *source;
 
   connections = gegl_pad_get_connections (gegl_node_get_pad (op->node,
@@ -372,16 +372,16 @@ gegl_affine_get_source_matrix (OpTransform    *affine,
   g_assert (connections);
 
   source = gegl_connection_get_source_node (connections->data)->operation;
-  g_assert (IS_OP_AFFINE (source));
+  g_assert (IS_OP_TRANSFORM (source));
 
-  gegl_affine_create_composite_matrix (OP_AFFINE (source), output);
-  /*gegl_matrix3_copy (output, OP_AFFINE (source)->matrix);*/
+  gegl_transform_create_composite_matrix (OP_TRANSFORM (source), output);
+  /*gegl_matrix3_copy (output, OP_TRANSFORM (source)->matrix);*/
 }
 
 static GeglRectangle
-gegl_affine_get_bounding_box (GeglOperation *op)
+gegl_transform_get_bounding_box (GeglOperation *op)
 {
-  OpTransform      *affine  = OP_AFFINE (op);
+  OpTransform      *transform  = OP_TRANSFORM (op);
   GeglMatrix3    matrix;
   GeglRectangle  in_rect = {0,0,0,0},
                  have_rect;
@@ -393,22 +393,22 @@ gegl_affine_get_bounding_box (GeglOperation *op)
 
   sampler = gegl_buffer_sampler_new (NULL,
                                      babl_format("RaGaBaA float"),
-                                     affine->sampler);
+                                     transform->sampler);
   context_rect = *gegl_sampler_get_context_rect (sampler);
   g_object_unref (sampler);
 
   if (gegl_operation_source_get_bounding_box (op, "input"))
     in_rect = *gegl_operation_source_get_bounding_box (op, "input");
 
-  gegl_affine_create_composite_matrix (affine, &matrix);
+  gegl_transform_create_composite_matrix (transform, &matrix);
 
-  if (gegl_affine_is_intermediate_node (affine) ||
+  if (gegl_transform_is_intermediate_node (transform) ||
       gegl_matrix3_is_identity (&matrix))
     {
       return in_rect;
     }
 
-  if (!gegl_affine_matrix3_allow_fast_translate (&matrix))
+  if (!gegl_transform_matrix3_allow_fast_translate (&matrix))
     {
       in_rect.x      += context_rect.x;
       in_rect.y      += context_rect.y;
@@ -432,22 +432,22 @@ gegl_affine_get_bounding_box (GeglOperation *op)
     gegl_matrix3_transform_point (&matrix,
                              have_points + i, have_points + i + 1);
 
-  gegl_affine_bounding_box (have_points, 4, &have_rect);
+  gegl_transform_bounding_box (have_points, 4, &have_rect);
   return have_rect;
 }
 
 static GeglNode *
-gegl_affine_detect (GeglOperation *operation,
-                    gint           x,
-                    gint           y)
+gegl_transform_detect (GeglOperation *operation,
+                       gint           x,
+                       gint           y)
 {
-  OpTransform    *affine      = OP_AFFINE (operation);
+  OpTransform    *transform      = OP_TRANSFORM (operation);
   GeglNode    *source_node = gegl_operation_get_source_node (operation, "input");
   GeglMatrix3  inverse;
   gdouble      need_points [2];
   gint         i;
 
-  if (gegl_affine_is_intermediate_node (affine) ||
+  if (gegl_transform_is_intermediate_node (transform) ||
       gegl_matrix3_is_identity (&inverse))
     {
       return gegl_operation_detect (source_node->operation, x, y);
@@ -456,23 +456,23 @@ gegl_affine_detect (GeglOperation *operation,
   need_points [0] = x;
   need_points [1] = y;
 
-  gegl_affine_create_matrix (affine, &inverse);
+  gegl_transform_create_matrix (transform, &inverse);
   gegl_matrix3_invert (&inverse);
 
   for (i = 0; i < 2; i += 2)
     gegl_matrix3_transform_point (&inverse,
-                             need_points + i, need_points + i + 1);
+                                  need_points + i, need_points + i + 1);
 
   return gegl_operation_detect (source_node->operation,
                                 need_points[0], need_points[1]);
 }
 
 static GeglRectangle
-gegl_affine_get_required_for_output (GeglOperation       *op,
-                                     const gchar         *input_pad,
-                                     const GeglRectangle *region)
+gegl_transform_get_required_for_output (GeglOperation       *op,
+                                        const gchar         *input_pad,
+                                        const GeglRectangle *region)
 {
-  OpTransform   *affine = OP_AFFINE (op);
+  OpTransform   *transform = OP_TRANSFORM (op);
   GeglMatrix3    inverse;
   GeglRectangle  requested_rect,
                  need_rect;
@@ -484,14 +484,14 @@ gegl_affine_get_required_for_output (GeglOperation       *op,
   requested_rect = *region;
   sampler = gegl_buffer_sampler_new (NULL,
                                      babl_format("RaGaBaA float"),
-                                     affine->sampler);
+                                     transform->sampler);
   context_rect = *gegl_sampler_get_context_rect (sampler);
   g_object_unref (sampler);
 
-  gegl_affine_create_composite_matrix (affine, &inverse);
+  gegl_transform_create_composite_matrix (transform, &inverse);
   gegl_matrix3_invert (&inverse);
 
-  if (gegl_affine_is_intermediate_node (affine) ||
+  if (gegl_transform_is_intermediate_node (transform) ||
       gegl_matrix3_is_identity (&inverse))
     {
       return requested_rect;
@@ -511,8 +511,8 @@ gegl_affine_get_required_for_output (GeglOperation       *op,
 
   for (i = 0; i < 8; i += 2)
     gegl_matrix3_transform_point (&inverse,
-                             need_points + i, need_points + i + 1);
-  gegl_affine_bounding_box (need_points, 4, &need_rect);
+                                  need_points + i, need_points + i + 1);
+  gegl_transform_bounding_box (need_points, 4, &need_rect);
 
   need_rect.x      += context_rect.x;
   need_rect.y      += context_rect.y;
@@ -522,11 +522,11 @@ gegl_affine_get_required_for_output (GeglOperation       *op,
 }
 
 static GeglRectangle
-gegl_affine_get_invalidated_by_change (GeglOperation       *op,
-                                       const gchar         *input_pad,
-                                       const GeglRectangle *input_region)
+gegl_transform_get_invalidated_by_change (GeglOperation       *op,
+                                          const gchar         *input_pad,
+                                          const GeglRectangle *input_region)
 {
-  OpTransform       *affine = OP_AFFINE (op);
+  OpTransform       *transform = OP_TRANSFORM (op);
   GeglMatrix3        matrix;
   GeglRectangle      affected_rect;
   GeglRectangle      context_rect;
@@ -537,24 +537,24 @@ gegl_affine_get_invalidated_by_change (GeglOperation       *op,
 
   sampler = gegl_buffer_sampler_new (NULL,
                                      babl_format("RaGaBaA float"),
-                                     affine->sampler);
+                                     transform->sampler);
   context_rect = *gegl_sampler_get_context_rect (sampler);
   g_object_unref (sampler);
 
-  gegl_affine_create_matrix (affine, &matrix);
+  gegl_transform_create_matrix (transform, &matrix);
 
-  if (affine->origin_x || affine->origin_y)
-    gegl_matrix3_originate (&matrix, affine->origin_x, affine->origin_y);
+  if (transform->origin_x || transform->origin_y)
+    gegl_matrix3_originate (&matrix, transform->origin_x, transform->origin_y);
 
-  if (gegl_affine_is_composite_node (affine))
+  if (gegl_transform_is_composite_node (transform))
     {
       GeglMatrix3 source;
 
-      gegl_affine_get_source_matrix (affine, &source);
+      gegl_transform_get_source_matrix (transform, &source);
       gegl_matrix3_multiply (&matrix, &source, &matrix);
     }
 
-  if (gegl_affine_is_intermediate_node (affine) ||
+  if (gegl_transform_is_intermediate_node (transform) ||
       gegl_matrix3_is_identity (&matrix))
     {
       return region;
@@ -581,16 +581,16 @@ gegl_affine_get_invalidated_by_change (GeglOperation       *op,
     gegl_matrix3_transform_point (&matrix,
                              affected_points + i, affected_points + i + 1);
 
-  gegl_affine_bounding_box (affected_points, 4, &affected_rect);
+  gegl_transform_bounding_box (affected_points, 4, &affected_rect);
   return affected_rect;
 }
 
 static void
-affine_affine (GeglBuffer  *dest,
-               GeglBuffer  *src,
-               GeglMatrix3 *matrix,
-               GeglSampler *sampler,
-               gint         level)
+transform_affine (GeglBuffer  *dest,
+                     GeglBuffer  *src,
+                     GeglMatrix3 *matrix,
+                     GeglSampler *sampler,
+                     gint         level)
 {
   GeglBufferIterator *i;
   const GeglRectangle *dest_extent;
@@ -612,7 +612,7 @@ affine_affine (GeglBuffer  *dest,
 
   format = babl_format ("RaGaBaA float");
 
-  /* XXX: fast paths as existing in files in the same dir as affine.c
+  /* XXX: fast paths as existing in files in the same dir as transform.c
    *      should probably be hooked in here, and bailing out before using
    *      the generic code.
    */
@@ -666,11 +666,11 @@ affine_affine (GeglBuffer  *dest,
 }
 
 static void
-affine_generic (GeglBuffer  *dest,
-                GeglBuffer  *src,
-                GeglMatrix3 *matrix,
-                GeglSampler *sampler,
-                gint         level)
+transform_generic (GeglBuffer  *dest,
+                   GeglBuffer  *src,
+                   GeglMatrix3 *matrix,
+                   GeglSampler *sampler,
+                   gint         level)
 {
   GeglBufferIterator *i;
   const GeglRectangle *dest_extent;
@@ -691,7 +691,7 @@ affine_generic (GeglBuffer  *dest,
 
   format = babl_format ("RaGaBaA float");
 
-  /* XXX: fast paths as existing in files in the same dir as affine.c
+  /* XXX: fast paths as existing in files in the same dir as transform.c
    *      should probably be hooked in here, and bailing out before using
    *      the generic code.
    */
@@ -767,7 +767,7 @@ static gboolean gegl_matrix3_is_affine (GeglMatrix3 *matrix)
 }
 
 static gboolean
-gegl_affine_matrix3_allow_fast_translate (GeglMatrix3 *matrix)
+gegl_transform_matrix3_allow_fast_translate (GeglMatrix3 *matrix)
 {
   if (! GEGL_FLOAT_EQUAL (matrix->coeff[0][2], (gint) matrix->coeff[0][2]) ||
       ! GEGL_FLOAT_EQUAL (matrix->coeff[1][2], (gint) matrix->coeff[1][2]))
@@ -776,7 +776,7 @@ gegl_affine_matrix3_allow_fast_translate (GeglMatrix3 *matrix)
 }
 
 static gboolean
-gegl_affine_matrix3_allow_fast_reflect_x (GeglMatrix3 *matrix)
+gegl_transform_matrix3_allow_fast_reflect_x (GeglMatrix3 *matrix)
 {
   GeglMatrix3 copy;
 
@@ -784,11 +784,11 @@ gegl_affine_matrix3_allow_fast_reflect_x (GeglMatrix3 *matrix)
     return FALSE;
   gegl_matrix3_copy_into (&copy, matrix);
   copy.coeff[1][1] = 1.;
-  return gegl_affine_matrix3_allow_fast_translate (&copy);
+  return gegl_transform_matrix3_allow_fast_translate (&copy);
 }
 
 static gboolean
-gegl_affine_matrix3_allow_fast_reflect_y (GeglMatrix3 *matrix)
+gegl_transform_matrix3_allow_fast_reflect_y (GeglMatrix3 *matrix)
 {
   GeglMatrix3 copy;
 
@@ -796,15 +796,15 @@ gegl_affine_matrix3_allow_fast_reflect_y (GeglMatrix3 *matrix)
     return FALSE;
   gegl_matrix3_copy_into (&copy, matrix);
   copy.coeff[0][0] = 1.;
-  return gegl_affine_matrix3_allow_fast_translate (&copy);
+  return gegl_transform_matrix3_allow_fast_translate (&copy);
 }
 
 static void
-gegl_affine_fast_reflect_x (GeglBuffer              *dest,
-                            GeglBuffer              *src,
-                            const GeglRectangle     *dest_rect,
-                            const GeglRectangle     *src_rect,
-                            gint                     level)
+gegl_transform_fast_reflect_x (GeglBuffer              *dest,
+                               GeglBuffer              *src,
+                               const GeglRectangle     *dest_rect,
+                               const GeglRectangle     *src_rect,
+                               gint                     level)
 {
   const Babl              *format = gegl_buffer_get_format (src);
   const gint               px_size = babl_format_get_bytes_per_pixel (format),
@@ -837,11 +837,11 @@ gegl_affine_fast_reflect_x (GeglBuffer              *dest,
 }
 
 static void
-gegl_affine_fast_reflect_y (GeglBuffer              *dest,
-                            GeglBuffer              *src,
-                            const GeglRectangle     *dest_rect,
-                            const GeglRectangle     *src_rect,
-                            gint                     level)
+gegl_transform_fast_reflect_y (GeglBuffer              *dest,
+                               GeglBuffer              *src,
+                               const GeglRectangle     *dest_rect,
+                               const GeglRectangle     *src_rect,
+                               gint                     level)
 {
   const Babl              *format = gegl_buffer_get_format (src);
   const gint               px_size = babl_format_get_bytes_per_pixel (format),
@@ -883,20 +883,20 @@ gegl_affine_fast_reflect_y (GeglBuffer              *dest,
 }
 
 static gboolean
-gegl_affine_process (GeglOperation        *operation,
-                     GeglOperationContext *context,
-                     const gchar          *output_prop,
-                     const GeglRectangle  *result,
-                     gint                  level)
+gegl_transform_process (GeglOperation        *operation,
+                        GeglOperationContext *context,
+                        const gchar          *output_prop,
+                        const GeglRectangle  *result,
+                        gint                  level)
 {
   GeglBuffer          *input;
   GeglBuffer          *output;
   GeglMatrix3          matrix;
-  OpTransform            *affine = (OpTransform *) operation;
+  OpTransform         *transform = (OpTransform *) operation;
 
-  gegl_affine_create_composite_matrix (affine, &matrix);
+  gegl_transform_create_composite_matrix (transform, &matrix);
 
-  if (gegl_affine_is_intermediate_node (affine) ||
+  if (gegl_transform_is_intermediate_node (transform) ||
       gegl_matrix3_is_identity (&matrix))
     {
       /* passing straight through (like gegl:nop) */
@@ -909,9 +909,9 @@ gegl_affine_process (GeglOperation        *operation,
 
       gegl_operation_context_take_object (context, "output", G_OBJECT (input));
     }
-  else if (gegl_affine_matrix3_allow_fast_translate (&matrix) ||
+  else if (gegl_transform_matrix3_allow_fast_translate (&matrix) ||
            (gegl_matrix3_is_translate (&matrix) &&
-            affine->sampler == GEGL_SAMPLER_NEAREST))
+            transform->sampler == GEGL_SAMPLER_NEAREST))
     {
       /* doing a buffer shifting trick, (enhanced nop) */
       input  = gegl_operation_context_get_source (context, "input");
@@ -933,7 +933,7 @@ gegl_affine_process (GeglOperation        *operation,
       if (input != NULL)
         g_object_unref (input);
     }
-  else if (gegl_affine_matrix3_allow_fast_reflect_x (&matrix))
+  else if (gegl_transform_matrix3_allow_fast_reflect_x (&matrix))
     {
       GeglRectangle      src_rect;
       GeglSampler       *sampler;
@@ -953,19 +953,19 @@ gegl_affine_process (GeglOperation        *operation,
 
       sampler = gegl_buffer_sampler_new (input,
                                          babl_format("RaGaBaA float"),
-                                         affine->sampler);
+                                         transform->sampler);
       context_rect = *gegl_sampler_get_context_rect (sampler);
 
       src_rect.width -= context_rect.width;
       src_rect.height -= context_rect.height;
 
-      gegl_affine_fast_reflect_x (output, input, result, &src_rect, context->level);
+      gegl_transform_fast_reflect_x (output, input, result, &src_rect, context->level);
       g_object_unref (sampler);
 
       if (input != NULL)
         g_object_unref (input);
     }
-  else if (gegl_affine_matrix3_allow_fast_reflect_y (&matrix))
+  else if (gegl_transform_matrix3_allow_fast_reflect_y (&matrix))
     {
       GeglRectangle      src_rect;
       GeglSampler       *sampler;
@@ -985,13 +985,13 @@ gegl_affine_process (GeglOperation        *operation,
 
       sampler = gegl_buffer_sampler_new (input,
                                          babl_format("RaGaBaA float"),
-                                         affine->sampler);
+                                         transform->sampler);
       context_rect = *gegl_sampler_get_context_rect (sampler);
 
       src_rect.width -= context_rect.width;
       src_rect.height -= context_rect.height;
 
-      gegl_affine_fast_reflect_y (output, input, result, &src_rect, context->level);
+      gegl_transform_fast_reflect_y (output, input, result, &src_rect, context->level);
       g_object_unref (sampler);
 
       if (input != NULL)
@@ -1007,15 +1007,15 @@ gegl_affine_process (GeglOperation        *operation,
 
       sampler = gegl_buffer_sampler_new (input,
                                          babl_format("RaGaBaA float"),
-                                         affine->sampler);
+                                         transform->sampler);
 
       if (gegl_matrix3_is_affine (&matrix))
         {
-          affine_affine  (output, input, &matrix, sampler, context->level);
+          transform_affine  (output, input, &matrix, sampler, context->level);
         }
       else
         {
-          affine_generic (output, input, &matrix, sampler, context->level);
+          transform_generic (output, input, &matrix, sampler, context->level);
         }
 
       g_object_unref (sampler);
